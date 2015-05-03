@@ -8,9 +8,9 @@
     # Use this if your website runs in the root of the domain.
     # i.e. http://example.com/index.html
     #
-    RewriteBase /
-    RewriteCond %{HTTP:Cookie} devicePixelRatio [NC]
-    RewriteRule \.(?:jpe?g|gif|png|bmp)$ /retinaimages.php [NC,L]
+    #RewriteBase /
+    #RewriteCond %{HTTP:Cookie} devicePixelRatio [NC]
+    #RewriteRule \.(?:jpe?g|gif|png|bmp)$ /retinaimages.php [NC,L]
 
     # Option 2
     # ==================
@@ -19,5 +19,31 @@
     #
     #RewriteBase /website/directory
     #RewriteRule \.(?:jpe?g|gif|png|bmp)$ /website/directory/retinaimages.php [NC,L]
+
+    # Option 3
+    # ==================
+    # Pure Apache modRewrite (htaccess) and avoid PHP to generate retina images.
+    # Auto redirecting images when cookie devicePixelRatio=1 and retina-image available.
+    #
+    # Example:
+    # - /path/to/foobar.gif to /path/to/@2x/foobar.gif  
+    # - /path/to/another/subfolder/foobar.gif to /path/to/another/subfolder/@2x/foobar.gif  
+    #
+    # Step: 
+    # 1. Change .DOMAIN.TLD below with your domain
+    # 2. Add below line to your html
+    #    <style id="devicePixelRatio" media="only screen and (-moz-min-device-pixel-ratio: 2), only screen and (-o-min-device-pixel-ratio: 2/1), only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min-device-pixel-ratio: 2)">html{background-image:url("_retina@2x.gif")}</style>
+    # 3. Upload your retina images into /@2x/ subdir of image(s) directories
+    
+    RewriteBase /
+    RewriteCond %{HTTP_COOKIE} !^.*devicePixelRatio.*$ [NC]
+    RewriteCond %{REQUEST_URI} (_retina@2x\.gif)$ [NC]
+    RewriteRule ^(.*)$ - [L,CO=devicePixelRatio:1:.DOMAIN.TLD:0:/]
+    
+    RewriteCond %{HTTP_COOKIE} devicePixelRatio=1 [NC]
+    RewriteCond %{REQUEST_URI} ^/(.*)/([\w\-]+)\.(gif|png|jpg|jpeg)$ [NC]
+    RewriteCond %{REQUEST_URI} !(@2x).* [NC]
+    RewriteCond %{DOCUMENT_ROOT}/%1/@2x/%2\.%3 -f
+    RewriteRule ^(.*)$ /%1/@2x/%2.%3 [L]
 
 </IfModule>
